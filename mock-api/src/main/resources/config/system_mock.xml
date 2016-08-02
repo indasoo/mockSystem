@@ -1,0 +1,37 @@
+<systems port= "55555">
+<!--
+		挡板配置文件，可以按照不同的系统划分，分别提供不同的协议，可根据内容返回不同的文件内容，挡板支持功能测试和性能测试
+		配置规则如下：
+		
+		1	允许配置多个system节点，每个节点代表一个模拟系统，系统的name属性必须唯一
+		2	system节点允许有多个子节点，可以是TCP, HTTP,和JMS，分别代表三种通信协议
+		3	返回内容需存储在文件中，并置于response目录下。如果readfile属性值为true，则每一次调用，都实时读取文件内容，该设置用于功能测试；
+		否则，只在挡板启动时加载文件内容，之后不再读取文件，该设置支持性能测试。
+		4  返回机制支持静态和动态两种方式：
+			静态：如DXPT系统配置，无论请求报文如何，都返回统一文件内容
+			动态：如HXXT1系统配置，可根据内容路由到不同的文件内容并返回
+						路由格式有两种格式:
+						a) LENGTH(固定报文，指定偏移量和长度): switch="LENGTH:offset=0;length=1"
+						b) XPATH (指定XPATH路径):switch="XPATH:/a/b/c"
+
+						同时需指定responseFile属性格式 responseFile="value:filename[;value:filename]"
+						即可根据收到请求的value值路由到不同的文件
+		5 当type为asyn时，即TCP异步长短连接，需要增加remoteip,remoteport,connections,sendType字段。
+	-->
+	<system name="HXXT1">
+		<TCP port="10011" switch="LENGTH:offset=0;length=1" responseFile="2:scene1_private.txt;1:scene1_public.txt" readFile="false"  poolsize = "150" connType="short" readPolicy="length:unknown" writePolicy="length:unknown"/>
+	</system>
+	<system name="HXXT2">
+		<TCP port="10012"  responseFile="scene2.txt" readFile="false" poolsize = "150" connType="short" readPolicy="length:unknown" writePolicy="length:unknown"/>
+	</system>
+	<system name="HXXT3">
+		<TCP port="10021"  responseFile="scene3.txt" readFile="false" poolsize = "150" connType="long" readPolicy="length:s=0,e=8" writePolicy="length:s=0,e=8" remoteip = "192.168.203.164" remoteport="10022" connections = "3" type="asyn" sendType="long"/>
+	</system>
+	<system name="HXXT4">
+		<TCP port="10023"  responseFile="scene3.txt" readFile="false" poolsize = "150" connType="short" readPolicy="length:s=0,e=8" writePolicy="length:s=0,e=8" remoteip = "192.168.203.164" remoteport="10024" connections = "3" type="asyn" sendType="short"/>
+	</system>
+	<system name="KHWY">
+		<HTTP url="http://127.0.0.1:10016/aaa" responseFile="scene1.txt"  readFile="true"/>
+		<!--<JMS  jndiContextFactory="com.dc.messageclient.jndi.MessageServerInitialContextFactory" providerURL="tcp://127.0.0.1:4141" connectionFactory="ConnectionFactory" receiveQueue="AdminService.in" sendQueue="AdminService.out" responseFile="scene1.txt"/>-->
+	</system>
+</systems>
